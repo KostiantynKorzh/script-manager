@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 
+@CrossOrigin(origins = "*", allowedHeaders = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/executions")
 public class ExecutionController {

@@ -108,7 +108,7 @@ public class ExecutionService {
         return jobResult.toString();
     }
 
-    private List<Script> createListOfScripts(List<Long> scriptsIds){
+    public List<Script> createListOfScripts(List<Long> scriptsIds){
         List<Script> scripts = new LinkedList<>();
         scriptsIds.forEach(scriptId -> {
             Script script = scriptRepository.findById(scriptId).orElseGet(() -> {
@@ -123,7 +123,7 @@ public class ExecutionService {
         return scripts;
     }
 
-    private List<Long> convertScriptIdsFromStringToList(String scriptsIdsString){
+    public List<Long> convertScriptIdsFromStringToList(String scriptsIdsString){
         return Arrays.stream(scriptsIdsString.split(",")).map(Long::parseLong).toList();
     }
 
