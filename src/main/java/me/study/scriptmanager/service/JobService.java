@@ -1,5 +1,7 @@
 package me.study.scriptmanager.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import me.study.scriptmanager.dto.ScriptCreationDto;
 import me.study.scriptmanager.model.Job;
 import me.study.scriptmanager.model.Script;
@@ -22,40 +24,57 @@ public class JobService {
         this.jobRepository = jobRepository;
     }
 
-    public Job getJob(Long id) throws IOException {
+    public Job getJob(Long id) {
         return jobRepository.findById(id).orElseThrow(() ->
                 new RuntimeException("No such job with id: " + id)
         );
     }
 
-    public void createJob(String name, List<Object> scripts) throws IOException {
+    public Job createJob(String name, List<Object> scripts, String params) throws IOException {
+        List<Long> scriptsIds = createScriptsOrGetIdAndCreateScriptsIdsList(scripts);
+
+        return jobRepository.save(Job.builder()
+                .name(name)
+                .scriptsIds(convertScriptsIdsToCommaSeparatedString(scriptsIds))
+                .params(params)
+                .build());
+    }
+
+    private List<Long> createScriptsOrGetIdAndCreateScriptsIdsList(List<Object> scripts) {
         List<Long> scriptsIds = new LinkedList<>();
         scripts.forEach(script -> {
             if (script instanceof ScriptCreationDto) {
-                Script createdScript = scriptRepository.save(Script.builder()
-                        .name(((ScriptCreationDto) script).name())
-                        .body(((ScriptCreationDto) script).scriptBody())
-                        .build());
-                scriptsIds.add(createdScript.getId());
+                Script createdScript = null;
+                try {
+                    createdScript = createScriptFromCreationDto((ScriptCreationDto) script);
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+                if (createdScript != null) {
+                    scriptsIds.add(createdScript.getId());
+                }
             } else {
                 scriptsIds.add((Long) script);
             }
         });
 
-        Job job = jobRepository.save(Job.builder()
-                .name(name)
-                .scriptsIds(String.join(",",
-                                scriptsIds.toString()
-                                        .replace("[", "")
-                                        .replace("]", ""))
-                        .replaceAll("\\s*", "")
-                )
+        return scriptsIds;
+    }
+
+    private Script createScriptFromCreationDto(ScriptCreationDto script) throws JsonProcessingException {
+        return scriptRepository.save(Script.builder()
+                .name(script.name())
+                .body(script.scriptBody())
+                .params(String.valueOf(new ObjectMapper().writeValueAsString(((ScriptCreationDto) script).params())))
                 .build());
+    }
 
-        System.out.println(job);
-
-//        Path fileName = Path.of(formatFilenameWithShellExtension(BASE_DIR + "\\" + scriptToCreate.name()));
-//        Files.writeString(fileName, scriptToCreate.scriptBody());
+    private String convertScriptsIdsToCommaSeparatedString(List<Long> scriptsIds) {
+        return String.join(",",
+                        scriptsIds.toString()
+                                .replace("[", "")
+                                .replace("]", ""))
+                .replaceAll("\\s*", "");
     }
 
 }

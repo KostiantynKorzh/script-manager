@@ -1,5 +1,6 @@
 package me.study.scriptmanager.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import me.study.scriptmanager.model.Job;
 import me.study.scriptmanager.model.Script;
 import me.study.scriptmanager.repository.JobRepository;
@@ -10,10 +11,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static me.study.scriptmanager.utils.Constants.BASE_DIR;
 import static me.study.scriptmanager.utils.Constants.BASH_PATH;
-import static me.study.scriptmanager.utils.FileUtils.formatFilenameWithShellExtension;
 
 @Service
 public class ExecutionService {
@@ -21,29 +21,45 @@ public class ExecutionService {
     private final JobRepository jobRepository;
     private final ScriptRepository scriptRepository;
 
-    public ExecutionService(JobRepository jobRepository, ScriptRepository scriptRepository) {
+    private final ObjectMapper mapper;
+
+    public ExecutionService(JobRepository jobRepository, ScriptRepository scriptRepository, ObjectMapper mapper) {
         this.jobRepository = jobRepository;
         this.scriptRepository = scriptRepository;
+        this.mapper = mapper;
     }
 
-    public String executeScriptFromString(String script, List<String> args) throws IOException {
-//        script = formatFilenameWithShellExtension(script);
-//        String fullScriptPath = BASE_DIR + "\\" + script;
-//        System.out.println("Full Script Path: " + fullScriptPath);
+    public String executeScriptFromString(String script, Map<String, Object> params) throws IOException {
+        String formattedScript = addAssigningParamsToVariablesForScript(script, params);
 
-        List<String> resultCommandList = new ArrayList<>();
-        String[] command = {BASH_PATH, "-c", script};
-        Collections.addAll(resultCommandList, command);
-        Collections.addAll(resultCommandList, args.toArray(new String[0]));
+        String[] command = {BASH_PATH, "-c", formattedScript};
 
+        logFullCommand(command);
+
+        return executeScriptAndReturnOutput(command);
+    }
+
+    private String addAssigningParamsToVariablesForScript(String script, Map<String, Object> params) {
+        StringBuilder formattedScript = new StringBuilder(script);
+        params.entrySet().forEach(entry -> {
+            formattedScript.insert(0, entry.getKey() + "=" + entry.getValue() + '\n');
+        });
+        System.out.println("Formatted Script: " + formattedScript);
+
+        return formattedScript.toString();
+    }
+
+    private void logFullCommand(String[] command) {
         StringBuilder fullCommand = new StringBuilder();
-        for (String commandPart : resultCommandList) {
+        for (String commandPart : command) {
             fullCommand.append(commandPart).append(" ");
         }
 
         System.out.println("Full Command: " + fullCommand);
+    }
 
-        Process process = Runtime.getRuntime().exec(resultCommandList.toArray(new String[0]));
+    private String executeScriptAndReturnOutput(String[] command) throws IOException {
+        Process process = Runtime.getRuntime().exec(command);
         BufferedReader reader = new BufferedReader(new InputStreamReader(
                 process.getInputStream()));
         StringBuilder scriptOutput = new StringBuilder();
@@ -51,13 +67,48 @@ public class ExecutionService {
         while ((s = reader.readLine()) != null) {
             scriptOutput.append(s).append('\n');
         }
-        System.out.println("Output: " + scriptOutput);
+
         return scriptOutput.toString();
     }
 
-    public void executeJob(Long id) {
+    public String executeJob(Long id, Map<String, Object> params) {
+        StringBuilder jobResult = new StringBuilder();
+
         Job job = jobRepository.getById(id);
-        List<Long> scriptsIds = Arrays.stream(job.getScriptsIds().split(",")).map(Long::new).toList();
+        List<Long> scriptsIds = convertScriptIdsFromStringToList(job.getScriptsIds());
+        List<Script> scripts = createListOfScripts(scriptsIds);
+
+        AtomicInteger counter = new AtomicInteger(1);
+
+        Map<String, Object> scriptParamsWithJobsResults = new HashMap<>();
+        scripts.forEach(script -> {
+            try {
+                Map<String, Object> allScriptParamsMap = mapper.readValue(script.getParams(), Map.class);
+                Set<String> allScriptParams = allScriptParamsMap.keySet();
+
+                params.keySet().forEach(jobParam -> {
+                    if (allScriptParams.contains(jobParam)) {
+                        scriptParamsWithJobsResults.put(jobParam, params.get(jobParam));
+                    }
+                });
+
+                String scriptResult = executeScriptFromString(script.getBody(), scriptParamsWithJobsResults);
+
+                jobResult.append(script.getName())
+                        .append(" ----------------- \n")
+                        .append(scriptResult)
+                        .append('\n');
+
+                scriptParamsWithJobsResults.put("script" + counter.getAndIncrement(), scriptResult);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        return jobResult.toString();
+    }
+
+    private List<Script> createListOfScripts(List<Long> scriptsIds){
         List<Script> scripts = new LinkedList<>();
         scriptsIds.forEach(scriptId -> {
             Script script = scriptRepository.findById(scriptId).orElseGet(() -> {
@@ -68,15 +119,12 @@ public class ExecutionService {
                 scripts.add(script);
             }
         });
-        System.out.println(scriptsIds);
-        System.out.println(scripts);
-        scripts.forEach(script -> {
-            try {
-                executeScriptFromString(script.getBody(), new LinkedList<>());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+
+        return scripts;
+    }
+
+    private List<Long> convertScriptIdsFromStringToList(String scriptsIdsString){
+        return Arrays.stream(scriptsIdsString.split(",")).map(Long::parseLong).toList();
     }
 
 }

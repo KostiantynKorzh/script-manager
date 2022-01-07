@@ -16,22 +16,26 @@ import java.util.List;
 public class JobController {
 
     private final JobService scriptService;
+    private final ObjectMapper mapper;
 
-    public JobController(JobService scriptService) {
+    public JobController(JobService scriptService, ObjectMapper mapper) {
         this.scriptService = scriptService;
+        this.mapper = mapper;
     }
 
     @GetMapping("/{id}")
-    public Job getScript(@PathVariable Long id) throws IOException {
+    public Job getScript(@PathVariable Long id) {
         return scriptService.getJob(id);
     }
 
     @PostMapping()
-    public String createScript(@RequestBody JsonNode requestBody) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+    public Job createScript(@RequestBody JsonNode requestBody) throws IOException {
         List<Object> scripts = new ArrayList<>();
+
         String jobName = requestBody.get("name").asText();
+        JsonNode paramsNode = requestBody.get("params");
         JsonNode scriptsNode = requestBody.get("steps");
+
         for (JsonNode jsonNode : scriptsNode) {
             if (jsonNode.isObject()) {
                 ScriptCreationDto scriptToCreate = mapper.treeToValue(jsonNode, ScriptCreationDto.class);
@@ -40,8 +44,7 @@ public class JobController {
                 scripts.add(jsonNode.asLong());
             }
         }
-        scriptService.createJob(jobName, scripts);
-        return "Creating Job...";
+        return scriptService.createJob(jobName, scripts, paramsNode.toString());
     }
 
 }

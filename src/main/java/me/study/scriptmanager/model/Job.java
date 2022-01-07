@@ -1,27 +1,27 @@
 package me.study.scriptmanager.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
+@SuperBuilder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
 
 @Entity
 @Table(name = "jobs")
-public class Job {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Job extends BaseModel {
 
     private String name;
 
     private String scriptsIds;
+
+    @Type(type = "jsonb")
+    @Column(name = "params", columnDefinition = "jsonb")
+    private String params;
 
 }

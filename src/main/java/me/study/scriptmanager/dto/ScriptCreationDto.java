@@ -1,4 +1,6 @@
 package me.study.scriptmanager.dto;
 
-public record ScriptCreationDto(String name, String scriptBody) {
+import java.util.Map;
+
+public record ScriptCreationDto(String name, String scriptBody, Map<String, Object> params) {
 }

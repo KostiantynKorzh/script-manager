@@ -18,8 +18,7 @@ public class ExecutionController {
 
     @PostMapping()
     public String executeScript(@RequestBody ExecuteScriptDto executeScriptDto) throws IOException {
-        scriptService.executeJob(13L);
-        return "Executing job...";
+        return scriptService.executeJob(executeScriptDto.id(), executeScriptDto.params());
     }
 
 }
