@@ -16,6 +16,7 @@ import javax.persistence.*;
 @Table(name = "jobs")
 public class Job extends BaseModel {
 
+    @Column(unique = true)
     private String name;
 
     private String scriptsIds;

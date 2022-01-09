@@ -17,6 +17,7 @@ import javax.persistence.*;
 @Table(name = "scripts")
 public class Script extends BaseModel {
 
+    @Column(unique = true)
     private String name;
 
     private String body;

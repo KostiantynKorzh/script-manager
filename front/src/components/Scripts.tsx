@@ -3,12 +3,12 @@ import {getAllScripts} from "../services/ScriptService";
 import {Accordion, AccordionDetails, AccordionSummary, Box, Button, TextField, Typography} from "@mui/material";
 import {ScriptField} from "../App";
 
-export const mapParamsStringToArray = (paramsString: string): string[] => {
+export const mapParamsStringToArray = (paramsString: string): any[] => {
     const paramsMap = JSON.parse(paramsString);
-    const paramsArray: string[] = [];
+    const paramsArray: any[] = [];
     if (paramsMap) {
         Object.keys(paramsMap).forEach(key => {
-            paramsArray.push(key);
+            paramsArray.push({[key]: paramsMap[key]});
         });
     }
 
@@ -18,22 +18,23 @@ export const mapParamsStringToArray = (paramsString: string): string[] => {
 export const renderParamsInput = (paramsString: string, onChange: (paramName: string, value: any) => void) => {
     const paramsArray = mapParamsStringToArray(paramsString);
     return (
-        paramsArray.map(param => (
-            <div>
-                {param}
-                {/*script1, script2... are reserved for scripts result to pass in another scripts*/}
-                {!param.includes("script") &&
-                    <>
-                        : {"\n"}
-                        <TextField
-                            onChange={(e) => {
-                                onChange(param, e.target.value);
-                            }}
-                        />
-                    </>
-                }
-            </div>
-        ))
+        paramsArray.map((param: any) => {
+                const paramName = Object.keys(param)[0];
+                const paramType = param[paramName];
+                return (
+                    <div>
+                        {paramName}
+                        {/*script1, script2... are reserved for scripts result to pass in another scripts*/}
+                        {!paramName.includes("script") &&
+                            <>
+                                : {"\n"}
+                                {paramType}
+                            </>
+                        }
+                    </div>
+                )
+            }
+        )
     )
 };
 
@@ -82,11 +83,6 @@ export const Scripts = () => {
                                         </>
                                     }
                                 })()}
-                            <Button variant="contained"
-                                    onClick={() => {
-
-                                    }}
-                            >Run</Button>
                         </AccordionDetails>
                     </Accordion>
                 ))}
