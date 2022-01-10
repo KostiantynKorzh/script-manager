@@ -9,9 +9,16 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import { ScriptField } from "../../App";
 import { getAllScripts } from "../../services/ScriptService";
 import { createJob } from "../../services/JobService";
+import Params, { ParamEntry } from "../Params";
+
+export type ScriptField = {
+	id: any;
+	name: string;
+	body: string;
+	params: ParamEntry[];
+};
 
 export const JobCreationPage = () => {
 	const [fields, setFields] = useState<any[]>([]);
@@ -20,6 +27,7 @@ export const JobCreationPage = () => {
 	const [scripts, setScripts] = useState<any[]>([]);
 	const [selectedNewScript, setSelectedNewScript] = useState<any>({});
 	const [jobName, setJobName] = useState<string>("");
+	const [params, setParams] = useState<ParamEntry[]>([]);
 
 	useEffect(() => {
 		getAllScripts()
@@ -57,6 +65,18 @@ export const JobCreationPage = () => {
 		setFields([...updatedFields]);
 	};
 
+	const formatParams = (params: ParamEntry[]) => {
+		let result = {};
+		params.forEach(param => {
+			result = {
+				...result,
+				[param.name]: [param.type][0],
+			};
+		});
+
+		return result;
+	};
+
 	const onSave = () => {
 		const formattedSteps: any = [];
 		fields.forEach(step => {
@@ -65,14 +85,16 @@ export const JobCreationPage = () => {
 				formattedSteps.push({
 					name: step.name,
 					scriptBody: step.body,
-					params: {},
+					params: formatParams(step.params),
 				});
 			} else {
 				formattedSteps.push(step.id);
 			}
 		});
 
-		createJob(jobName, formattedSteps, {}).then(console.log).catch(alert);
+		createJob(jobName, formattedSteps, formatParams(params))
+			.then(console.log)
+			.catch(alert);
 	};
 
 	const renderCard = (field: ScriptField, index: number) => {
@@ -129,6 +151,16 @@ export const JobCreationPage = () => {
 								setFields([...fields]);
 							}}
 						/>
+						<Params
+							params={field.params}
+							setParams={params => {
+								const fieldIndex = fields.findIndex(
+									fieldFromArray => fieldFromArray.id === field.id
+								);
+								fields[fieldIndex].params = params;
+								setFields([...fields]);
+							}}
+						/>
 					</div>
 				)}
 			</Draggable>
@@ -143,7 +175,7 @@ export const JobCreationPage = () => {
 
 	const actionButtons = (
 		<>
-			<ButtonGroup variant='text' aria-label='text button group'>
+			<ButtonGroup variant='text'>
 				<Button
 					onClick={() => {
 						setFields((prev: any) => [
@@ -152,6 +184,7 @@ export const JobCreationPage = () => {
 								id: generateTemporaryIdForScriptField(),
 								name: "",
 								body: "",
+								params: [],
 							},
 						]);
 					}}
@@ -173,24 +206,6 @@ export const JobCreationPage = () => {
 					Save
 				</Button>
 			</ButtonGroup>
-			{/*<Fab color="primary" aria-label="add"*/}
-			{/*     onClick={() => {*/}
-			{/*         setFields((prev: any) => [...prev, {*/}
-			{/*             id: generateTemporaryIdForScriptField(),*/}
-			{/*             name: "",*/}
-			{/*             body: ""*/}
-			{/*         }]);*/}
-			{/*     }}*/}
-			{/*>*/}
-			{/*    +*/}
-			{/*</Fab>*/}
-			{/*<Fab color="primary" aria-label="add"*/}
-			{/*     onClick={() => {*/}
-			{/*         console.log(fields);*/}
-			{/*     }}*/}
-			{/*>*/}
-			{/*    Save*/}
-			{/*</Fab>*/}
 		</>
 	);
 
@@ -210,6 +225,7 @@ export const JobCreationPage = () => {
 							setJobName(e.target.value);
 						}}
 					/>
+					<Params params={params} setParams={setParams} />
 					<DragDropContext onDragEnd={onDragEnd}>
 						<Droppable droppableId='droppable'>
 							{(provided: any) => (

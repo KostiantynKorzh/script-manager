@@ -5,13 +5,6 @@ import { Scripts } from "./components/Scripts";
 import { Jobs } from "./components/Jobs";
 import Header from "./components/Header";
 
-export type ScriptField = {
-	id: any;
-	name: string;
-	body: string;
-	params: any;
-};
-
 const App = () => {
 	return (
 		<BrowserRouter>

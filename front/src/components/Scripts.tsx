@@ -5,11 +5,15 @@ import {
 	AccordionDetails,
 	AccordionSummary,
 	Box,
-	Button,
-	TextField,
 	Typography,
 } from "@mui/material";
-import { ScriptField } from "../App";
+
+export type ScriptDto = {
+	id: any;
+	name: string;
+	body: string;
+	params: string;
+};
 
 export const mapParamsStringToArray = (paramsString: string): any[] => {
 	const paramsMap = JSON.parse(paramsString);
@@ -34,7 +38,7 @@ export const renderParamsInput = (
 		return (
 			<div>
 				{paramName}
-				{/*script1, script2... are reserved for scripts result to pass in another scripts*/}
+				{/* script1, script2... are reserved for scripts result to pass in another scripts*/}
 				{!paramName.includes("script") && (
 					<>
 						: {"\n"}
@@ -47,7 +51,7 @@ export const renderParamsInput = (
 };
 
 export const Scripts = () => {
-	const [scripts, setScripts] = useState<ScriptField[]>();
+	const [scripts, setScripts] = useState<ScriptDto[]>();
 
 	useEffect(() => {
 		getAllScripts()
@@ -56,6 +60,17 @@ export const Scripts = () => {
 			})
 			.catch(alert);
 	}, []);
+
+	const renderParams = (script: ScriptDto) => {
+		if (script.params && script.params.length !== 0 && script.params !== "{}") {
+			return (
+				<>
+					<Typography>Params: {"\n"}</Typography>
+					{renderParamsInput(script.params, () => {})}
+				</>
+			);
+		}
+	};
 
 	return (
 		<>
@@ -72,20 +87,7 @@ export const Scripts = () => {
 							<AccordionDetails>
 								<Typography>Body: {"\n"}</Typography>
 								<pre>{script.body}</pre>
-								{(() => {
-									if (
-										script.params &&
-										script.params.length !== 0 &&
-										script.params !== "{}"
-									) {
-										return (
-											<>
-												<Typography>Params: {"\n"}</Typography>
-												{renderParamsInput(script.params, () => {})}
-											</>
-										);
-									}
-								})()}
+								{renderParams(script)}
 							</AccordionDetails>
 						</Accordion>
 					))}

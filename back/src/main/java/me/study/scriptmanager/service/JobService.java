@@ -10,11 +10,8 @@ import me.study.scriptmanager.repository.JobRepository;
 import me.study.scriptmanager.repository.ScriptRepository;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-
-import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 @Service
 public class JobService {
