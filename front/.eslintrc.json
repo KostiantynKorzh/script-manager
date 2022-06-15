@@ -1,0 +1,52 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": [
+    "plugin:react/recommended",
+//    "standard",
+    "prettier"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": 2021,
+    "sourceType": "module"
+  },
+  "plugins": [
+    "react",
+    "@typescript-eslint"
+  ],
+  "rules": {
+    "no-use-before-define": [
+      "off"
+    ],
+    "no-array-constructor": [
+      "off"
+    ],
+    "@typescript-eslint/no-use-before-define": [
+      "warn"
+    ],
+    "react/jsx-key": [
+      "warn"
+    ],
+    "spaced-comment": [
+      "warn",
+      "always",
+      {
+        "line": {
+          "markers": [
+            "#region",
+            "#endregion",
+            "region",
+            "endregion"
+          ]
+        }
+      }
+    ],
+    "no-unused-vars": "warn"
+  }
+}
